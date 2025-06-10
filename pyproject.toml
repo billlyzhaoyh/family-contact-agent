@@ -26,3 +26,6 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 include = ["canto_nlp*", "bedrock_translation_agent*", "whatsapp-mcp*"]
+
+[tool.isort]
+profile = "black"
