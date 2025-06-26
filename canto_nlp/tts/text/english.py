@@ -4,6 +4,7 @@ import re
 
 from g2p_en import G2p
 from transformers import DebertaV2Tokenizer
+import inflect
 
 from canto_nlp.tts.text import symbols
 from canto_nlp.tts.text.symbols import punctuation
@@ -12,8 +13,6 @@ current_file_path = os.path.dirname(__file__)
 CMU_DICT_PATH = os.path.join(current_file_path, "cmudict.rep")
 CACHE_PATH = os.path.join(current_file_path, "cmudict_cache.pickle")
 _g2p = G2p()
-LOCAL_PATH = "./canto_nlp/tts/bert/deberta-v3-large"
-tokenizer = DebertaV2Tokenizer.from_pretrained(LOCAL_PATH)
 
 arpa = {
     "AH0",
@@ -236,8 +235,6 @@ def refine_syllables(syllables):
     return phonemes, tones
 
 
-import inflect
-
 _inflect = inflect.engine()
 _comma_number_re = re.compile(r"([0-9][0-9\,]+[0-9])")
 _decimal_number_re = re.compile(r"([0-9]+\.[0-9]+)")
@@ -393,6 +390,8 @@ def sep_text(text):
 
 
 def text_to_words(text):
+    LOCAL_PATH = "./canto_nlp/tts/bert/deberta-v3-large"
+    tokenizer = DebertaV2Tokenizer.from_pretrained(LOCAL_PATH)
     tokens = tokenizer.tokenize(text)
     words = []
     for idx, t in enumerate(tokens):

@@ -1,4 +1,4 @@
-import asyncio
+import os
 import uuid
 from pathlib import Path
 
@@ -139,8 +139,15 @@ def text_to_speech(text, sid=0, language="YUE"):
     return audio[0][0]
 
 
-# Run the application
 if __name__ == "__main__":
+    # Ensure all required directories exist before downloading models
+    print("Current working directory:", os.getcwd())
+    os.makedirs("./canto_nlp/tts/bert/bert-large-cantonese", exist_ok=True)
+    os.makedirs("./canto_nlp/tts/bert/deberta-v3-large", exist_ok=True)
+    os.makedirs("./canto_nlp/tts/onnx", exist_ok=True)
+    assert os.path.exists("./canto_nlp/tts/bert/bert-large-cantonese")
+    assert os.path.exists("./canto_nlp/tts/bert/deberta-v3-large")
+    assert os.path.exists("./canto_nlp/tts/onnx")
     download_models()
     text_to_baba = "Is it okay to have lunch at Laksa for 9 people next Wendesday at 12:30pm? Can we have the room downstairs? Thanks!"
     contacts = search_contacts("Family")
