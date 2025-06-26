@@ -33,7 +33,40 @@ This project integrates several open source components:
 - [ ] Add web UI for easier interaction
 
 ## Setup Instructions
-<!-- Add detailed setup steps here -->
+
+### Prerequisites
+- Python 3.11 (see `.python-version`)
+- [uv](https://github.com/astral-sh/uv) (a fast Python package manager)
+- Go (for WhatsApp bridge)
+
+### 1. Set up Python environment with uv
+```sh
+# Install uv if you don't have it
+pip install uv
+
+# Create a virtual environment (optional but recommended)
+uv venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+uv pip install -r requirements.txt  # or use `uv pip install .` if you have a pyproject.toml
+```
+
+### 2. Set up WhatsApp MCP Bridge
+```sh
+cd whatsapp_mcp/whatsapp-bridge
+# Run the Go server (first time will show a QR code to scan in WhatsApp)
+go run main.go
+```
+You may need to re-authenticate every month.
+
+### 3. Download Model Files
+Model files will be downloaded automatically on first run. Make sure you have internet access.
+
+### 4. Run the Main Application
+```sh
+python main.py
+```
 
 ## Contributing
 Contributions are welcome! Please open issues or submit pull requests to help improve the project.
