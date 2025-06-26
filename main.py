@@ -142,21 +142,21 @@ def text_to_speech(text, sid=0, language="YUE"):
 # Run the application
 if __name__ == "__main__":
     download_models()
-    text_to_baba = "Is Baba working 7 days a week or does he still have a day off?"
-    # contacts = search_contacts("Family")
-    # print(f"Contacts found: {contacts}")
-    # chats = list_chats(
-    #     query="Family",
-    #     limit=20,
-    #     page=0,
-    #     include_last_message=True,
-    #     sort_by="last_active"
-    # )
+    text_to_baba = "Is it okay to have lunch at Laksa for 9 people next Wendesday at 12:30pm? Can we have the room downstairs? Thanks!"
+    contacts = search_contacts("Family")
+    print(f"Contacts found: {contacts}")
+    chats = list_chats(
+        query="Family",
+        limit=20,
+        page=0,
+        include_last_message=True,
+        sort_by="last_active",
+    )
+    baba_jid = "120363036191596076@g.us"
     # print(f"Chats found: {chats}")
     # # filter for phonenumber 447711957486:
     # filtered_contacts = [c for c in contacts if c.phone_number == '447711957486']
     # baba_jid = filtered_contacts[0].jid if filtered_contacts else None
-    baba_jid = "120363036191596076@g.us"
     print(f"Baba's JID: {baba_jid}")
     if baba_jid:
         translation = Translation(

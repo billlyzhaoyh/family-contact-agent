@@ -150,3 +150,12 @@ whatsapp.log
 .DS_Store
 outputs
 .python-version
+
+# ignore onnx files
+*.onnx
+
+# ignore pytorch model files
+*.pt
+*.pth
+*.model
+*.bin
