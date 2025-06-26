@@ -159,3 +159,10 @@ outputs
 *.pth
 *.model
 *.bin
+
+# Large data/model files
+canto_nlp/tts/bert/bert-large-cantonese/tokenizer.json
+canto_nlp/tts/text/cmudict.rep
+canto_nlp/tts/text/jyutping.csv
+canto_nlp/tts/text/cmudict_cache.pickle
+canto_nlp/tts/text/yue_dict.txt
