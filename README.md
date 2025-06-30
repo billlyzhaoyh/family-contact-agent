@@ -17,15 +17,26 @@ A passion project to foster love and communication within families, especially w
 Some family members often communicate in voice notes, but not everyone speaks the same language. This project brings together open source tools to translate, transcribe, and deliver messages so everyone can participate in the conversation.
 
 ## Features
-- Translate voice notes between languages
+- Translate voice notes between languages using LiteLLM (supports multiple LLM providers)
 - Text-to-speech (TTS) and automatic speech recognition (ASR) for Cantonese
 - WhatsApp integration for seamless message delivery
+- Multi-provider LLM support (OpenAI, Anthropic, Azure, AWS Bedrock, Cohere, Google, Mistral)
 
 ## Architecture
 This project integrates several open source components:
-- [Bedrock Translation Agent](https://github.com/aws-samples/bedrock-translation-agent/tree/main)
-- [WhatsApp MCP Server](https://github.com/lharries/whatsapp-mcp)
-- Canto TTS components from [hon9kon9ize](https://huggingface.co/hon9kon9ize) and [Hugging Face Spaces](https://huggingface.co/spaces/hon9kon9ize/tts/tree/main)
+- **LiteLLM Translation Agent**: Multi-provider LLM integration for translation tasks
+- **WhatsApp MCP Server**: Message delivery and management
+- **Canto TTS components**: From [hon9kon9ize](https://huggingface.co/hon9kon9ize) and [Hugging Face Spaces](https://huggingface.co/spaces/hon9kon9ize/tts/tree/main)
+
+### LLM Provider Support
+The system supports multiple LLM providers through LiteLLM:
+- **OpenAI** (default): GPT-4o, GPT-4o-mini, GPT-4-turbo, GPT-3.5-turbo
+- **Anthropic**: Claude 3.5 Sonnet, Claude 3.5 Haiku, Claude 3 Opus/Sonnet/Haiku
+- **Azure OpenAI**: Azure-hosted GPT models
+- **AWS Bedrock**: Claude models via Bedrock
+- **Cohere**: Command and Command Light models
+- **Google**: Gemini Pro and Gemini Flash
+- **Mistral**: Mistral Large, Medium, and Small models
 
 ## Roadmap
 - [ ] Add Cantonese ASR so voice notes can be transcribed and translated back to English
@@ -53,7 +64,59 @@ source .venv/bin/activate
 uv pip install -e ".[dev]"  # Install with dev dependencies
 ```
 
-### 2. Set up WhatsApp MCP Bridge
+### 2. Configure LLM Provider (OpenAI - Default)
+Create a `.env` file in the project root with your API key:
+
+```sh
+# OpenAI (default provider)
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Optional: Custom OpenAI base URL (for Azure OpenAI or other compatible endpoints)
+# OPENAI_API_BASE=https://your-custom-endpoint.com/v1
+
+# Optional: OpenAI organization ID
+# OPENAI_ORGANIZATION=your_organization_id
+```
+
+#### Alternative Providers
+You can use other providers by setting the appropriate environment variables:
+
+**Anthropic:**
+```sh
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+```
+
+**Azure OpenAI:**
+```sh
+AZURE_API_KEY=your_azure_api_key_here
+AZURE_API_BASE=https://your-resource.openai.azure.com/
+AZURE_API_VERSION=2024-02-15-preview
+```
+
+**AWS Bedrock:**
+```sh
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_DEFAULT_REGION=us-east-1
+```
+
+**Cohere:**
+```sh
+COHERE_API_KEY=your_cohere_api_key_here
+```
+
+**Google (Vertex AI):**
+```sh
+GOOGLE_API_KEY=your_google_api_key_here
+GOOGLE_PROJECT_ID=your_project_id
+```
+
+**Mistral:**
+```sh
+MISTRAL_API_KEY=your_mistral_api_key_here
+```
+
+### 3. Set up WhatsApp MCP Bridge
 ```sh
 cd whatsapp_mcp/whatsapp-bridge
 # Run the Go server (first time will show a QR code to scan in WhatsApp)
@@ -61,10 +124,10 @@ go run main.go
 ```
 You may need to re-authenticate every month.
 
-### 3. Download Model Files
+### 4. Download Model Files
 Model files will be downloaded automatically on first run. Make sure you have internet access.
 
-### 4. Run the Main Application
+### 5. Run the Main Application
 ```sh
 python main.py
 ```
@@ -84,11 +147,16 @@ pre-commit run --all-files
 
 The pre-commit hooks will automatically:
 - Format code with Black
-- Sort imports with isort
-- Check code style with flake8
+- Check code style and sort imports with Ruff
 
 ### Code Formatting
 The project uses Black for code formatting and isort for import sorting. These are configured in `pyproject.toml` and will run automatically via pre-commit hooks.
+
+### Testing
+Run tests with pytest:
+```sh
+make test
+```
 
 ## Contributing
 Contributions are welcome! Please open issues or submit pull requests to help improve the project.
@@ -102,6 +170,6 @@ Before submitting a pull request, please ensure:
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ## Acknowledgements
-- AWS Bedrock Translation Agent
-- WhatsApp MCP
+- LiteLLM for multi-provider LLM integration
+- WhatsApp MCP for message delivery
 - Hugging Face and hon9kon9ize for Cantonese TTS/ASR resources
