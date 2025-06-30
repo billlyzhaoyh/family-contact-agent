@@ -2,12 +2,12 @@ import re
 import unicodedata
 
 import cn2an
-import jieba
 import pycantonese
 
 from canto_nlp.tts.text.symbols import punctuation
 
-jieba.load_userdict("./canto_nlp/tts/text/yue_dict.txt")
+# Global variable to track if jieba has been initialized
+_jieba_initialized = False
 
 jyutping_dict = {}
 
@@ -211,7 +211,23 @@ def replace_chars(text):
     return text
 
 
+def _initialize_jieba():
+    """Initialize jieba with user dictionary only when needed."""
+    global _jieba_initialized
+    if not _jieba_initialized:
+        import jieba
+
+        jieba.load_userdict("./canto_nlp/tts/text/yue_dict.txt")
+        _jieba_initialized = True
+        return jieba
+    else:
+        import jieba
+
+        return jieba
+
+
 def word_segmentation(text):
+    jieba = _initialize_jieba()
     words = jieba.cut(text)
     return words
 

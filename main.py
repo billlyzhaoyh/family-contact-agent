@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 import numpy as np
 from huggingface_hub import hf_hub_download
 
-from translation_agent.libs.translation import Translation
 from canto_nlp.tts.infer import OnnxInferenceSession
 from canto_nlp.tts.text import cleaned_text_to_sequence, get_bert
 from canto_nlp.tts.text.cleaner import clean_text
@@ -134,15 +133,7 @@ def text_to_speech(text, sid=0, language="YUE"):
 
 
 if __name__ == "__main__":
-    text_to_baba = "Is it okay to have lunch at Laksa for 9 people next Wendesday at 12:30pm? Can we have the room downstairs? Thanks!"
-    translation = Translation(
-        source_text=text_to_baba,
-        source_lang="English",
-        target_lang="Cantonese",
-        country="Hong Kong",
-    )
-    translated_text = translation.translate()
-    print(translated_text)
+    print("hello")
     # Ensure all required directories exist before downloading models
     # print("Current working directory:", os.getcwd())
     # os.makedirs("./canto_nlp/tts/bert/bert-large-cantonese", exist_ok=True)
