@@ -1,7 +1,7 @@
 # Makefile for Family Contact Agent
 # A passion project to foster love and communication within families
 
-.PHONY: help install install-dev test test-verbose test-coverage lint format clean setup whatsapp-bridge download-models run
+.PHONY: help install install-dev test test-verbose test-coverage lint format clean setup whatsapp-bridge download-models run check-deps
 
 # Default target
 help:
@@ -11,6 +11,7 @@ help:
 	@echo "  setup          - Set up the development environment"
 	@echo "  install        - Install production dependencies"
 	@echo "  install-dev    - Install development dependencies"
+	@echo "  check-deps     - Check if required system dependencies are installed"
 	@echo ""
 	@echo "Testing:"
 	@echo "  test           - Run all tests with pytest"
@@ -30,7 +31,7 @@ help:
 	@echo "  clean          - Clean up generated files and caches"
 
 # Setup development environment
-setup:
+setup: check-deps
 	@echo "Setting up development environment using uv..."
 	uv sync
 	@echo "Virtual environment created and dependencies installed. Activate it with:"
@@ -38,6 +39,35 @@ setup:
 	@echo "  .venv\\Scripts\\activate     # On Windows"
 	@echo ""
 	@echo "Development environment is ready."
+
+# Check system dependencies
+check-deps:
+	@echo "Checking system dependencies..."
+	@echo "Checking ffmpeg..."
+	@if command -v ffmpeg >/dev/null 2>&1; then \
+		echo "✓ ffmpeg is installed: $(ffmpeg -version | head -n1)"; \
+	else \
+		echo "✗ ffmpeg is not installed"; \
+		echo "  Install with: brew install ffmpeg (macOS) or apt-get install ffmpeg (Ubuntu)"; \
+		exit 1; \
+	fi
+	@echo "Checking Go..."
+	@if command -v go >/dev/null 2>&1; then \
+		echo "✓ Go is installed: $(go version)"; \
+	else \
+		echo "✗ Go is not installed"; \
+		echo "  Install from: https://golang.org/dl/"; \
+		exit 1; \
+	fi
+	@echo "Checking uv..."
+	@if command -v uv >/dev/null 2>&1; then \
+		echo "✓ uv is installed: $(uv --version)"; \
+	else \
+		echo "✗ uv is not installed"; \
+		echo "  Install with: curl -LsSf https://astral.sh/uv/install.sh | sh"; \
+		exit 1; \
+	fi
+	@echo "All system dependencies are installed! ✓"
 
 # Install production dependencies
 install:
@@ -73,7 +103,7 @@ format lint:
 
 
 # Start WhatsApp MCP bridge
-whatsapp-bridge:
+whatsapp-bridge: check-deps
 	@echo "Starting WhatsApp MCP bridge..."
 	cd whatsapp_mcp/whatsapp-bridge && go run main.go
 

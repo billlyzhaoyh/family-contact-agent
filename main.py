@@ -2,11 +2,22 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 import numpy as np
+import os
 from huggingface_hub import hf_hub_download
 
 from canto_nlp.tts.infer import OnnxInferenceSession
 from canto_nlp.tts.text import cleaned_text_to_sequence, get_bert
 from canto_nlp.tts.text.cleaner import clean_text
+from whatsapp_mcp.whatsapp_mcp_server.whatsapp import (
+    search_contacts,
+    get_direct_chat_by_contact,
+    list_messages_raw,
+    download_media,
+)
+from whatsapp_mcp.whatsapp_mcp_server.audio import convert_opus_ogg_to_mp3
+from canto_nlp.asr.infer import transcribe_audio
+import soundfile as sf
+import sounddevice as sd
 
 load_dotenv()
 
@@ -132,34 +143,92 @@ def text_to_speech(text, sid=0, language="YUE"):
     return audio[0][0]
 
 
+def find_last_audio_message_from_other(messages):
+    """
+    Find the last audio message that's not from the current user.
+
+    Args:
+        messages: List of Message objects from list_messages()
+
+    Returns:
+        The last audio message from someone else, or None if not found
+    """
+    for message in messages:
+        # Check if it's an audio message (has media_type and content contains [audio)
+        if message.media_type == "audio" or (
+            message.content and "[audio" in message.content
+        ):
+            # Check if it's not from me
+            if not message.is_from_me:
+                return message
+    return None
+
+
 if __name__ == "__main__":
-    print("hello")
     # Ensure all required directories exist before downloading models
-    # print("Current working directory:", os.getcwd())
-    # os.makedirs("./canto_nlp/tts/bert/bert-large-cantonese", exist_ok=True)
-    # os.makedirs("./canto_nlp/tts/bert/deberta-v3-large", exist_ok=True)
-    # os.makedirs("./canto_nlp/tts/onnx", exist_ok=True)
-    # assert os.path.exists("./canto_nlp/tts/bert/bert-large-cantonese")
-    # assert os.path.exists("./canto_nlp/tts/bert/deberta-v3-large")
-    # assert os.path.exists("./canto_nlp/tts/onnx")
-    # download_models()
-    # text_to_baba = "Is it okay to have lunch at Laksa for 9 people next Wendesday at 12:30pm? Can we have the room downstairs? Thanks!"
-    # contacts = search_contacts("Family")
-    # print(f"Contacts found: {contacts}")
-    # chats = list_chats(
-    #     query="Family",
-    #     limit=20,
-    #     page=0,
-    #     include_last_message=True,
-    #     sort_by="last_active",
-    # )
-    # baba_jid = "120363036191596076@g.us"
-    # # print(f"Chats found: {chats}")
-    # # # filter for phonenumber 447711957486:
-    # # filtered_contacts = [c for c in contacts if c.phone_number == '447711957486']
-    # # baba_jid = filtered_contacts[0].jid if filtered_contacts else None
-    # print(f"Baba's JID: {baba_jid}")
-    # if baba_jid:
+    print("Current working directory:", os.getcwd())
+    os.makedirs("./canto_nlp/tts/bert/bert-large-cantonese", exist_ok=True)
+    os.makedirs("./canto_nlp/tts/bert/deberta-v3-large", exist_ok=True)
+    os.makedirs("./canto_nlp/tts/onnx", exist_ok=True)
+    assert os.path.exists("./canto_nlp/tts/bert/bert-large-cantonese")
+    assert os.path.exists("./canto_nlp/tts/bert/deberta-v3-large")
+    assert os.path.exists("./canto_nlp/tts/onnx")
+    download_models()
+    text_to_baba = "Is it okay to have lunch at Laksa for 9 people next Wendesday at 12:30pm? Can we have the room downstairs? Thanks!"
+    contacts = search_contacts("Michael")
+    print(f"Contacts found: {contacts}")
+    # filter for phonenumber 447711957486:
+    filtered_contacts = [c for c in contacts if c.phone_number == "447711957486"]
+    baba_jid = filtered_contacts[0].jid if filtered_contacts else None
+    print(f"Baba's JID: {baba_jid}")
+    if baba_jid:
+        chat = get_direct_chat_by_contact("447711957486")
+        print(f"Chat: {chat}")
+        messages = list_messages_raw(chat_jid=chat.jid)
+        print(f"Messages: {messages}")
+        # Find the last audio message from Baba
+        last_audio_from_baba = find_last_audio_message_from_other(messages)
+        if last_audio_from_baba:
+            print(f"Last audio message from Baba: {last_audio_from_baba}")
+            print(f"Message ID: {last_audio_from_baba.id}")
+            print(f"Timestamp: {last_audio_from_baba.timestamp}")
+            print(f"Content: {last_audio_from_baba.content}")
+            # download the audio file
+            audio_path = download_media(last_audio_from_baba.id, chat.jid)
+            print(f"Audio path: {audio_path}")
+            if audio_path:
+                # Convert Opus OGG to MP3 for better compatibility
+                try:
+                    mp3_path = convert_opus_ogg_to_mp3(audio_path)
+                    print(f"Converted to MP3: {mp3_path}")
+                    print(f"You can now play this MP3 file on any device: {mp3_path}")
+
+                    # Transcribe the audio
+                    try:
+                        print("Transcribing audio...")
+                        transcribed_text = transcribe_audio(mp3_path)
+                        if transcribed_text:
+                            print(f"Transcribed text: {transcribed_text}")
+                        else:
+                            print(
+                                "No text was transcribed (audio might be silent or unclear)"
+                            )
+                    except Exception as e:
+                        print(f"Failed to transcribe audio: {e}")
+
+                except Exception as e:
+                    print(f"Failed to convert to MP3: {e}")
+            else:
+                print("Failed to download audio file")
+            # read the mp3 file and play it
+            audio_data, sample_rate = sf.read(mp3_path)
+            print(f"Audio loaded: {len(audio_data)} samples at {sample_rate} Hz")
+            # play the audio
+            sd.play(audio_data, sample_rate)
+            sd.wait()
+        else:
+            print("No audio messages found from Baba")
+
     #     translation = Translation(
     #         source_text=text_to_baba,
     #         source_lang="English",
@@ -189,5 +258,5 @@ if __name__ == "__main__":
     #     else:
     #         print(f"Failed to send audio message: {status_message}")
 
-    # else:
-    #     print("Baba's JID not found.")
+    else:
+        print("Baba's JID not found.")
