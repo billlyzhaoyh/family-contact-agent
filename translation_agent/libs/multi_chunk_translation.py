@@ -1,20 +1,20 @@
 from typing import List
 
-from bedrock_translation_agent.libs.bedrock import Bedrock
-from bedrock_translation_agent.libs.bedrock_model import BedrockModel
-from bedrock_translation_agent.libs.utils import split_text_by_token_size
+from translation_agent.libs.litellm_client import LiteLLMClient
+from translation_agent.libs.litellm_model import LiteLLMModel
+from translation_agent.libs.utils import split_text_by_token_size
 
 
 class MultiChunkTranslation:
 
-    _init_translation_model = BedrockModel.CLAUDE_3_SONNET_1_0
-    _reflect_on_translation_model = BedrockModel.CLAUDE_3_SONNET_1_0
-    _improve_translation_model = BedrockModel.CLAUDE_3_SONNET_1_0
+    _init_translation_model = LiteLLMModel.CLAUDE_3_SONNET
+    _reflect_on_translation_model = LiteLLMModel.CLAUDE_3_SONNET
+    _improve_translation_model = LiteLLMModel.CLAUDE_3_SONNET
 
     def __init__(
         self, source_text: str, source_lang: str, target_lang: str, country: str = ""
     ):
-        self.__bedrock = Bedrock()
+        self.__litellm_client = LiteLLMClient()
         self.__source_text_chunks = split_text_by_token_size(source_text)
         self.__source_lang = source_lang
         self.__target_lang = (target_lang,)
@@ -71,7 +71,7 @@ Output only the translation of the portion you are asked to translate, and nothi
                 chunk_to_translate=self.__source_text_chunks[i],
             )
 
-            translation = self.__bedrock.invoke_model(
+            translation = self.__litellm_client.invoke_model(
                 prompt=prompt,
                 system_msg=sys_prompt,
                 model=self._get_init_translation_model(),
@@ -178,7 +178,7 @@ Output only the suggestions and nothing else."""
                     translation_1_chunk=pre_translation_chunks[i],
                 )
 
-            reflection = self.__bedrock.invoke_model(
+            reflection = self.__litellm_client.invoke_model(
                 prompt=prompt,
                 system_msg=sys_prompt,
                 model=self._get_reflect_on_translation_model(),
@@ -199,7 +199,7 @@ account a set of expert suggestions and constructive critisms. Below, the source
 
 The source text is below, delimited by XML tags <SOURCE_TEXT> and </SOURCE_TEXT>, and the part that has been translated
 is delimited by <TRANSLATE_THIS> and </TRANSLATE_THIS> within the source text. You can use the rest of the source text
-as context, but need to provide a translation only of the part indicated by <TRANSLATE_THIS> and </TRANSLATE_THIS>.
+as context for improving the translated part.
 
 <SOURCE_TEXT>
 {tagged_text}
@@ -215,24 +215,22 @@ The translation of the indicated part, delimited below by <TRANSLATION> and </TR
 {translation_1_chunk}
 </TRANSLATION>
 
-The expert translations of the indicated part, delimited below by <EXPERT_SUGGESTIONS> and </EXPERT_SUGGESTIONS>, is as follows:
+The expert suggestions for improving the translation, delimited below by <EXPERT_SUGGESTIONS> and </EXPERT_SUGGESTIONS>, are as follows:
 <EXPERT_SUGGESTIONS>
 {reflection_chunk}
 </EXPERT_SUGGESTIONS>
 
-Taking into account the expert suggestions rewrite the translation to improve it, paying attention
-to whether there are ways to improve the translation's
+Please take into account the expert suggestions when improving the translation. Improve the translation by ensuring:
 
 (i) accuracy (by correcting errors of addition, mistranslation, omission, or untranslated text),
-(ii) fluency (by applying {target_lang} grammar, spelling and punctuation rules and ensuring there are no unnecessary repetitions), \
+(ii) fluency (by applying {target_lang} grammar, spelling and punctuation rules and ensuring there are no unnecessary repetitions),
 (iii) style (by ensuring the translations reflect the style of the source text)
 (iv) terminology (inappropriate for context, inconsistent use), or
 (v) other errors.
-(vi) remove all XML tags in the output.
 
-Output only the new translation of the indicated part and nothing else."""
+Output only the improved translation and nothing else."""
 
-        improvement_translation_chunks = []
+        improvement_chunks = []
         for i in range(len(self.__source_text_chunks)):
             tagged_text = (
                 "".join(self.__source_text_chunks[0:i])
@@ -242,7 +240,7 @@ Output only the new translation of the indicated part and nothing else."""
                 + "".join(self.__source_text_chunks[i + 1 :])
             )
 
-            improvement_prompt = improvement_prompt_tpl.format(
+            prompt = improvement_prompt_tpl.format(
                 source_lang=self.__source_lang,
                 target_lang=self.__target_lang,
                 tagged_text=tagged_text,
@@ -251,33 +249,32 @@ Output only the new translation of the indicated part and nothing else."""
                 reflection_chunk=reflection_chunks[i],
             )
 
-            improvement_translation = self.__bedrock.invoke_model(
+            improvement = self.__litellm_client.invoke_model(
+                prompt=prompt,
                 system_msg=sys_prompt,
-                prompt=improvement_prompt,
                 model=self._get_improve_translation_model(),
             )
+            improvement_chunks.append(improvement)
 
-            improvement_translation_chunks.append(improvement_translation)
+        return improvement_chunks
 
-        return improvement_translation_chunks
-
-    def set_init_model(self, model: BedrockModel):
+    def set_init_model(self, model: LiteLLMModel):
         self._init_translation_model = model
         return self
 
-    def set_reflect_on_model(self, model: BedrockModel):
+    def set_reflect_on_model(self, model: LiteLLMModel):
         self._reflect_on_translation_model = model
         return self
 
-    def set_improve_model(self, model: BedrockModel):
+    def set_improve_model(self, model: LiteLLMModel):
         self._improve_translation_model = model
         return self
 
-    def _get_init_translation_model(self) -> BedrockModel:
+    def _get_init_translation_model(self) -> LiteLLMModel:
         return self._init_translation_model
 
-    def _get_reflect_on_translation_model(self) -> BedrockModel:
+    def _get_reflect_on_translation_model(self) -> LiteLLMModel:
         return self._reflect_on_translation_model
 
-    def _get_improve_translation_model(self) -> BedrockModel:
+    def _get_improve_translation_model(self) -> LiteLLMModel:
         return self._improve_translation_model

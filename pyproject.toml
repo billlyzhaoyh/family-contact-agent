@@ -22,10 +22,18 @@ dependencies = [
     "httpx>=0.28.1",
     "mcp[cli]>=1.6.0",
     "requests>=2.32.3",
+    "litellm>=1.73.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=3.6.0",
+    "pytest",
+    "pytest-asyncio",
 ]
 
 [tool.setuptools.packages.find]
-include = ["canto_nlp*", "bedrock_translation_agent*", "whatsapp-mcp*"]
+include = ["canto_nlp*", "translation_agent*", "whatsapp_mcp*"]
 
 [tool.isort]
 profile = "black"

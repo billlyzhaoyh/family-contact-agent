@@ -1,7 +1,7 @@
-from bedrock_translation_agent.libs.bedrock_model import BedrockModel
-from bedrock_translation_agent.libs.multi_chunk_translation import MultiChunkTranslation
-from bedrock_translation_agent.libs.one_chunk_translation import OneChunkTranslation
-from bedrock_translation_agent.libs.utils import (
+from translation_agent.libs.litellm_model import LiteLLMModel
+from translation_agent.libs.multi_chunk_translation import MultiChunkTranslation
+from translation_agent.libs.one_chunk_translation import OneChunkTranslation
+from translation_agent.libs.utils import (
     MAX_TOKENS_PER_CHUNK,
     num_tokens_in_string,
 )
@@ -9,9 +9,9 @@ from bedrock_translation_agent.libs.utils import (
 
 class Translation:
 
-    __init_model: BedrockModel = BedrockModel.CLAUDE_3_5_SONNET_1_0
-    __reflect_on_model: BedrockModel = BedrockModel.CLAUDE_3_5_SONNET_1_0
-    __improve_model: BedrockModel = BedrockModel.CLAUDE_3_5_SONNET_1_0
+    __init_model: LiteLLMModel = LiteLLMModel.GPT_4O
+    __reflect_on_model: LiteLLMModel = LiteLLMModel.GPT_4O
+    __improve_model: LiteLLMModel = LiteLLMModel.GPT_4O
 
     def __init__(
         self,
@@ -29,9 +29,9 @@ class Translation:
 
     def set_models(
         self,
-        init_model: BedrockModel = BedrockModel.DEFAULT_MODEL,
-        reflect_on_model: BedrockModel = BedrockModel.DEFAULT_MODEL,
-        improve_model: BedrockModel = BedrockModel.DEFAULT_MODEL,
+        init_model: LiteLLMModel = LiteLLMModel.GPT_4O,
+        reflect_on_model: LiteLLMModel = LiteLLMModel.GPT_4O,
+        improve_model: LiteLLMModel = LiteLLMModel.GPT_4O,
     ):
         self.__init_model = init_model
         self.__reflect_on_model = reflect_on_model
@@ -42,7 +42,7 @@ class Translation:
     def translate(self):
         pass
         num_tokens_in_text = num_tokens_in_string(input_str=self.__source_text)
-        if num_tokens_in_text < self.__max_tokens:
+        if num_tokens_in_text <= self.__max_tokens:
             return self._do_onechunk_translation()
         else:
             return self._do_multichunk_translation()
