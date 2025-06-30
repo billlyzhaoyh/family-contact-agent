@@ -1,4 +1,3 @@
-import csv
 import re
 import unicodedata
 
@@ -318,7 +317,7 @@ def parse_jyutping(jyutping):
     try:
         tone = int(jyutping[-1])
         jyutping = jyutping[:-1]
-    except:
+    except ValueError:
         raise ValueError(
             f"Jyutping string does not end with a tone number, in {orig_jyutping}"
         )

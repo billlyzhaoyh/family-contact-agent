@@ -8,6 +8,7 @@ A passion project to foster love and communication within families, especially w
 - [Architecture](#architecture)
 - [Roadmap](#roadmap)
 - [Setup Instructions](#setup-instructions)
+- [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
@@ -49,7 +50,7 @@ uv venv .venv
 source .venv/bin/activate
 
 # Install dependencies
-uv pip install -r requirements.txt  # or use `uv pip install .` if you have a pyproject.toml
+uv pip install -e ".[dev]"  # Install with dev dependencies
 ```
 
 ### 2. Set up WhatsApp MCP Bridge
@@ -68,8 +69,34 @@ Model files will be downloaded automatically on first run. Make sure you have in
 python main.py
 ```
 
+## Development
+
+### Pre-commit Hooks
+This project uses pre-commit hooks to ensure code quality. After installing dev dependencies, set up pre-commit:
+
+```sh
+# Install pre-commit hooks
+pre-commit install
+
+# Run pre-commit on all files (optional)
+pre-commit run --all-files
+```
+
+The pre-commit hooks will automatically:
+- Format code with Black
+- Sort imports with isort
+- Check code style with flake8
+
+### Code Formatting
+The project uses Black for code formatting and isort for import sorting. These are configured in `pyproject.toml` and will run automatically via pre-commit hooks.
+
 ## Contributing
 Contributions are welcome! Please open issues or submit pull requests to help improve the project.
+
+Before submitting a pull request, please ensure:
+1. All pre-commit hooks pass
+2. Code is properly formatted
+3. Tests pass (if applicable)
 
 ## License
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

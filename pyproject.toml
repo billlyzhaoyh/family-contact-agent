@@ -25,8 +25,14 @@ dependencies = [
     "litellm>=1.73.6",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=3.6.0",
+    "pytest",
+]
+
 [tool.setuptools.packages.find]
-include = ["canto_nlp*", "bedrock_translation_agent*", "whatsapp-mcp*"]
+include = ["canto_nlp*", "translation_agent*", "whatsapp_mcp*"]
 
 [tool.isort]
 profile = "black"

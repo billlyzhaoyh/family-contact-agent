@@ -1,22 +1,13 @@
-import os
-import uuid
 from pathlib import Path
 from dotenv import load_dotenv
 
 import numpy as np
-import sounddevice as sd
-import soundfile as sf
 from huggingface_hub import hf_hub_download
 
 from translation_agent.libs.translation import Translation
 from canto_nlp.tts.infer import OnnxInferenceSession
 from canto_nlp.tts.text import cleaned_text_to_sequence, get_bert
 from canto_nlp.tts.text.cleaner import clean_text
-from whatsapp_mcp.whatsapp_mcp_server.whatsapp import (
-    list_chats,
-    search_contacts,
-    send_audio_message,
-)
 
 load_dotenv()
 
