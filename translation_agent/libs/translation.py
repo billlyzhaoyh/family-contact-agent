@@ -42,7 +42,7 @@ class Translation:
     def translate(self):
         pass
         num_tokens_in_text = num_tokens_in_string(input_str=self.__source_text)
-        if num_tokens_in_text < self.__max_tokens:
+        if num_tokens_in_text <= self.__max_tokens:
             return self._do_onechunk_translation()
         else:
             return self._do_multichunk_translation()

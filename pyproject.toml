@@ -29,6 +29,7 @@ dependencies = [
 dev = [
     "pre-commit>=3.6.0",
     "pytest",
+    "pytest-asyncio",
 ]
 
 [tool.setuptools.packages.find]
