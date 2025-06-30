@@ -1,17 +1,17 @@
-from bedrock_translation_agent.libs.bedrock import Bedrock
-from bedrock_translation_agent.libs.bedrock_model import BedrockModel
+from translation_agent.libs.litellm_client import LiteLLMClient
+from translation_agent.libs.litellm_model import LiteLLMModel
 
 
 class OneChunkTranslation:
 
-    _init_translation_model = BedrockModel.CLAUDE_3_SONNET_1_0
-    _reflect_on_translation_model = BedrockModel.CLAUDE_3_SONNET_1_0
-    _improve_translation_model = BedrockModel.CLAUDE_3_SONNET_1_0
+    _init_translation_model = LiteLLMModel.GPT_4O
+    _reflect_on_translation_model = LiteLLMModel.GPT_4O
+    _improve_translation_model = LiteLLMModel.GPT_4O
 
     def __init__(
         self, source_text: str, source_lang: str, target_lang: str, country: str = ""
     ):
-        self.__bedrock = Bedrock()
+        self.__litellm_client = LiteLLMClient()
         self.__source_text = source_text
         self.__source_lang = source_lang
         self.__target_lang = target_lang
@@ -43,7 +43,7 @@ Do not provide any explanations or text apart from the translation.
             source_text=self.__source_text,
         )
 
-        return self.__bedrock.invoke_model(
+        return self.__litellm_client.invoke_model(
             prompt=translate_prompt,
             system_msg=system_prompt,
             model=self._get_init_translation_model(),
@@ -118,7 +118,7 @@ Output only the suggestions and nothing else."""
                 translation_1=pre_translation,
             )
 
-        return self.__bedrock.invoke_model(
+        return self.__litellm_client.invoke_model(
             prompt=reflection_prompt,
             system_msg=sys_prompt,
             model=self._get_reflect_on_translation_model(),
@@ -165,29 +165,29 @@ Output only the new translation and nothing else."""
             reflection=reflection,
         )
 
-        return self.__bedrock.invoke_model(
+        return self.__litellm_client.invoke_model(
             prompt=improve_prompt,
             system_msg=sys_prompt,
             model=self._get_improve_translation_model(),
         )
 
-    def set_init_model(self, model: BedrockModel):
+    def set_init_model(self, model: LiteLLMModel = LiteLLMModel.GPT_4O):
         self._init_translation_model = model
         return self
 
-    def set_reflect_on_model(self, model: BedrockModel):
+    def set_reflect_on_model(self, model: LiteLLMModel = LiteLLMModel.GPT_4O):
         self._reflect_on_translation_model = model
         return self
 
-    def set_improve_model(self, model: BedrockModel):
+    def set_improve_model(self, model: LiteLLMModel = LiteLLMModel.GPT_4O):
         self._improve_translation_model = model
         return self
 
-    def _get_init_translation_model(self) -> BedrockModel:
+    def _get_init_translation_model(self) -> LiteLLMModel:
         return self._init_translation_model
 
-    def _get_reflect_on_translation_model(self) -> BedrockModel:
+    def _get_reflect_on_translation_model(self) -> LiteLLMModel:
         return self._reflect_on_translation_model
 
-    def _get_improve_translation_model(self) -> BedrockModel:
+    def _get_improve_translation_model(self) -> LiteLLMModel:
         return self._improve_translation_model

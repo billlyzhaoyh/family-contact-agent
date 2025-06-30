@@ -1,13 +1,14 @@
 import os
 import uuid
 from pathlib import Path
+from dotenv import load_dotenv
 
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
 from huggingface_hub import hf_hub_download
 
-from bedrock_translation_agent.libs.translation import Translation
+from translation_agent.libs.translation import Translation
 from canto_nlp.tts.infer import OnnxInferenceSession
 from canto_nlp.tts.text import cleaned_text_to_sequence, get_bert
 from canto_nlp.tts.text.cleaner import clean_text
@@ -16,6 +17,8 @@ from whatsapp_mcp.whatsapp_mcp_server.whatsapp import (
     search_contacts,
     send_audio_message,
 )
+
+load_dotenv()
 
 OnnxSession = None
 
@@ -140,60 +143,69 @@ def text_to_speech(text, sid=0, language="YUE"):
 
 
 if __name__ == "__main__":
-    # Ensure all required directories exist before downloading models
-    print("Current working directory:", os.getcwd())
-    os.makedirs("./canto_nlp/tts/bert/bert-large-cantonese", exist_ok=True)
-    os.makedirs("./canto_nlp/tts/bert/deberta-v3-large", exist_ok=True)
-    os.makedirs("./canto_nlp/tts/onnx", exist_ok=True)
-    assert os.path.exists("./canto_nlp/tts/bert/bert-large-cantonese")
-    assert os.path.exists("./canto_nlp/tts/bert/deberta-v3-large")
-    assert os.path.exists("./canto_nlp/tts/onnx")
-    download_models()
     text_to_baba = "Is it okay to have lunch at Laksa for 9 people next Wendesday at 12:30pm? Can we have the room downstairs? Thanks!"
-    contacts = search_contacts("Family")
-    print(f"Contacts found: {contacts}")
-    chats = list_chats(
-        query="Family",
-        limit=20,
-        page=0,
-        include_last_message=True,
-        sort_by="last_active",
+    translation = Translation(
+        source_text=text_to_baba,
+        source_lang="English",
+        target_lang="Cantonese",
+        country="Hong Kong",
     )
-    baba_jid = "120363036191596076@g.us"
-    # print(f"Chats found: {chats}")
-    # # filter for phonenumber 447711957486:
-    # filtered_contacts = [c for c in contacts if c.phone_number == '447711957486']
-    # baba_jid = filtered_contacts[0].jid if filtered_contacts else None
-    print(f"Baba's JID: {baba_jid}")
-    if baba_jid:
-        translation = Translation(
-            source_text=text_to_baba,
-            source_lang="English",
-            target_lang="Cantonese",
-            country="Hong Kong",
-        )
-        translated_text = translation.translate()
-        audio = text_to_speech(translated_text, sid=0, language="YUE")
-        output_dir = Path("outputs")
-        # generate a unique id for the output file
-        output_dir = output_dir / baba_jid
-        output_dir.mkdir(exist_ok=True)
-        unique_id = uuid.uuid4()
-        output_path = output_dir / f"{unique_id}.wav"
-        if audio is not None:
-            sf.write(output_path, audio, 44100)
-            print(f"Audio saved as {output_path}")
-            # Optionally play the audio
-            sd.play(audio, samplerate=44100)
-            sd.wait()
-        else:
-            print("No audio to play or save.")
-        # send the audio file to Baba
-        success, status_message = send_audio_message(baba_jid, str(output_path))
-        if success:
-            print(f"Audio message sent successfully: {status_message}")
-        else:
-            print(f"Failed to send audio message: {status_message}")
+    translated_text = translation.translate()
+    print(translated_text)
+    # Ensure all required directories exist before downloading models
+    # print("Current working directory:", os.getcwd())
+    # os.makedirs("./canto_nlp/tts/bert/bert-large-cantonese", exist_ok=True)
+    # os.makedirs("./canto_nlp/tts/bert/deberta-v3-large", exist_ok=True)
+    # os.makedirs("./canto_nlp/tts/onnx", exist_ok=True)
+    # assert os.path.exists("./canto_nlp/tts/bert/bert-large-cantonese")
+    # assert os.path.exists("./canto_nlp/tts/bert/deberta-v3-large")
+    # assert os.path.exists("./canto_nlp/tts/onnx")
+    # download_models()
+    # text_to_baba = "Is it okay to have lunch at Laksa for 9 people next Wendesday at 12:30pm? Can we have the room downstairs? Thanks!"
+    # contacts = search_contacts("Family")
+    # print(f"Contacts found: {contacts}")
+    # chats = list_chats(
+    #     query="Family",
+    #     limit=20,
+    #     page=0,
+    #     include_last_message=True,
+    #     sort_by="last_active",
+    # )
+    # baba_jid = "120363036191596076@g.us"
+    # # print(f"Chats found: {chats}")
+    # # # filter for phonenumber 447711957486:
+    # # filtered_contacts = [c for c in contacts if c.phone_number == '447711957486']
+    # # baba_jid = filtered_contacts[0].jid if filtered_contacts else None
+    # print(f"Baba's JID: {baba_jid}")
+    # if baba_jid:
+    #     translation = Translation(
+    #         source_text=text_to_baba,
+    #         source_lang="English",
+    #         target_lang="Cantonese",
+    #         country="Hong Kong",
+    #     )
+    #     translated_text = translation.translate()
+    #     audio = text_to_speech(translated_text, sid=0, language="YUE")
+    #     output_dir = Path("outputs")
+    #     # generate a unique id for the output file
+    #     output_dir = output_dir / baba_jid
+    #     output_dir.mkdir(exist_ok=True)
+    #     unique_id = uuid.uuid4()
+    #     output_path = output_dir / f"{unique_id}.wav"
+    #     if audio is not None:
+    #         sf.write(output_path, audio, 44100)
+    #         print(f"Audio saved as {output_path}")
+    #         # Optionally play the audio
+    #         sd.play(audio, samplerate=44100)
+    #         sd.wait()
+    #     else:
+    #         print("No audio to play or save.")
+    #     # send the audio file to Baba
+    #     success, status_message = send_audio_message(baba_jid, str(output_path))
+    #     if success:
+    #         print(f"Audio message sent successfully: {status_message}")
+    #     else:
+    #         print(f"Failed to send audio message: {status_message}")
 
-    else:
-        print("Baba's JID not found.")
+    # else:
+    #     print("Baba's JID not found.")
