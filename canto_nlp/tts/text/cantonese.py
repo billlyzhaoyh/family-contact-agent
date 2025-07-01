@@ -360,13 +360,13 @@ def g2p(text):
 if __name__ == "__main__":
     from text.cantonese_bert import get_bert_feature
 
-    # text = "Apple BB 你點解會咁柒㗎？我真係唔該晒你呀！123"
+    # text = "Apple BB 你點解會咁柒㗇？我真係唔該晒你呀！123"
     text = "佢邊係想辭工吖，跳下草裙舞想加人工之嘛。"
     # text = "我個 app 嘅介紹文想由你寫，因為我唔知從一般用家角度要細緻到乜程度"
     # text = "佢哋最叻咪就係去㗇人傷害人,得個殼咋!"
     text = text_normalize(text)
-    print("normalized text", text)
+    # print("normalized text", text)
     phones, tones, word2ph = g2p(text)
-    print(phones, tones, word2ph)
+    # print(phones, tones, word2ph)
     bert = get_bert_feature(text, word2ph)
-    print(bert.shape)
+    # print(bert.shape)
