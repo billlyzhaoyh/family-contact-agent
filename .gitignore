@@ -162,3 +162,6 @@ canto_nlp/tts/onnx/BertVits2.2PT/BertVits2.2PT_dp.onnx
 canto_nlp/tts/onnx/BertVits2.2PT/BertVits2.2PT_sdp.onnx
 canto_nlp/tts/onnx/BertVits2.2PT/BertVits2.2PT_flow.onnx
 canto_nlp/tts/onnx/BertVits2.2PT/BertVits2.2PT_dec.onnx
+
+# output files from whatsapp-bridge
+whatsapp_mcp/whatsapp-bridge/store

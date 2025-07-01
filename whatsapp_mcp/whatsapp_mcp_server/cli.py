@@ -247,4 +247,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # 447711957486@s.whatsapp.net

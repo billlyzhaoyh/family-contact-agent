@@ -111,7 +111,7 @@ def get_sender_name(sender_jid: str) -> str:
             conn.close()
 
 
-def format_message(message: Message, show_chat_info: bool = True) -> None:
+def format_message(message: Message, show_chat_info: bool = True) -> str:
     """Print a single message with consistent formatting."""
     output = ""
 
@@ -134,7 +134,9 @@ def format_message(message: Message, show_chat_info: bool = True) -> None:
     return output
 
 
-def format_messages_list(messages: List[Message], show_chat_info: bool = True) -> None:
+def format_messages_list(
+    messages: List[Message], show_chat_info: bool = True
+) -> list[str]:
     output = ""
     if not messages:
         output += "No messages to display."
@@ -146,6 +148,114 @@ def format_messages_list(messages: List[Message], show_chat_info: bool = True) -
 
 
 def list_messages(
+    after: Optional[str] = None,
+    before: Optional[str] = None,
+    sender_phone_number: Optional[str] = None,
+    chat_jid: Optional[str] = None,
+    query: Optional[str] = None,
+    limit: int = 20,
+    page: int = 0,
+    include_context: bool = True,
+    context_before: int = 1,
+    context_after: int = 1,
+) -> list[str]:
+    """Get messages matching the specified criteria with optional context."""
+    try:
+        conn = sqlite3.connect(MESSAGES_DB_PATH)
+        cursor = conn.cursor()
+
+        # Build base query
+        query_parts = [
+            "SELECT messages.timestamp, messages.sender, chats.name, messages.content, messages.is_from_me, chats.jid, messages.id, messages.media_type FROM messages"
+        ]
+        query_parts.append("JOIN chats ON messages.chat_jid = chats.jid")
+        where_clauses = []
+        params = []
+
+        # Add filters
+        if after:
+            try:
+                after = datetime.fromisoformat(after)
+            except ValueError:
+                raise ValueError(
+                    f"Invalid date format for 'after': {after}. Please use ISO-8601 format."
+                )
+
+            where_clauses.append("messages.timestamp > ?")
+            params.append(after)
+
+        if before:
+            try:
+                before = datetime.fromisoformat(before)
+            except ValueError:
+                raise ValueError(
+                    f"Invalid date format for 'before': {before}. Please use ISO-8601 format."
+                )
+
+            where_clauses.append("messages.timestamp < ?")
+            params.append(before)
+
+        if sender_phone_number:
+            where_clauses.append("messages.sender = ?")
+            params.append(sender_phone_number)
+
+        if chat_jid:
+            where_clauses.append("messages.chat_jid = ?")
+            params.append(chat_jid)
+
+        if query:
+            where_clauses.append("LOWER(messages.content) LIKE LOWER(?)")
+            params.append(f"%{query}%")
+
+        if where_clauses:
+            query_parts.append("WHERE " + " AND ".join(where_clauses))
+
+        # Add pagination
+        offset = page * limit
+        query_parts.append("ORDER BY messages.timestamp DESC")
+        query_parts.append("LIMIT ? OFFSET ?")
+        params.extend([limit, offset])
+
+        cursor.execute(" ".join(query_parts), tuple(params))
+        messages = cursor.fetchall()
+
+        result = []
+        for msg in messages:
+            message = Message(
+                timestamp=datetime.fromisoformat(msg[0]),
+                sender=msg[1],
+                chat_name=msg[2],
+                content=msg[3],
+                is_from_me=msg[4],
+                chat_jid=msg[5],
+                id=msg[6],
+                media_type=msg[7],
+            )
+            result.append(message)
+
+        if include_context and result:
+            # Add context for each message
+            messages_with_context = []
+            for msg in result:
+                context = get_message_context(msg.id, context_before, context_after)
+                messages_with_context.extend(context.before)
+                messages_with_context.append(context.message)
+                messages_with_context.extend(context.after)
+
+            return format_messages_list(messages_with_context, show_chat_info=True)
+
+        # Format and display messages without context
+        return format_messages_list(result, show_chat_info=True)
+
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        return []
+    finally:
+        if "conn" in locals():
+            conn.close()
+
+
+def list_messages_raw(
     after: Optional[str] = None,
     before: Optional[str] = None,
     sender_phone_number: Optional[str] = None,
@@ -240,10 +350,10 @@ def list_messages(
                 messages_with_context.append(context.message)
                 messages_with_context.extend(context.after)
 
-            return format_messages_list(messages_with_context, show_chat_info=True)
+            return messages_with_context
 
         # Format and display messages without context
-        return format_messages_list(result, show_chat_info=True)
+        return result
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")
