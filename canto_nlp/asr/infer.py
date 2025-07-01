@@ -91,7 +91,7 @@ def transcribe_audio_with_info(audio_path: str) -> dict:
 
 if __name__ == "__main__":
     # Example usage
-    mp3_path = "/Users/billyzhao/personal/personal-hacks/family-contact-agent/whatsapp_mcp/whatsapp-bridge/store/447711957486@s.whatsapp.net/audio_20250630_222135.mp3"
+    mp3_path = "path/to/your/audio/file.mp3"  # Replace with your audio file path
 
     try:
         # Simple transcription

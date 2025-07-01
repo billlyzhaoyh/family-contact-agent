@@ -271,21 +271,3 @@ def convert_opus_ogg_to_mp3_temp(input_file, bitrate="128k"):
         if os.path.exists(temp_file.name):
             os.unlink(temp_file.name)
         raise e
-
-
-if __name__ == "__main__":
-    # Example usage
-    import sys
-
-    if len(sys.argv) < 2:
-        print("Usage: python audio.py input_file [output_file]")
-        sys.exit(1)
-
-    input_file = sys.argv[1]
-
-    try:
-        result = convert_to_opus_ogg_temp(input_file)
-        print(f"Successfully converted to: {result}")
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
