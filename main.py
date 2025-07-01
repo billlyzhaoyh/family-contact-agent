@@ -2,6 +2,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 import argparse
 import uuid
+import logging
+import sys
 from typing import List, Dict, Any, Optional, Tuple, Union
 
 import numpy as np
@@ -25,6 +27,9 @@ import soundfile as sf
 import sounddevice as sd
 
 load_dotenv()
+
+# Global logger instance
+logger: Optional[logging.Logger] = None
 
 OnnxSession: Optional[OnnxInferenceSession] = None
 
@@ -55,6 +60,67 @@ MODELS: List[Dict[str, Union[str, List[str]]]] = [
 ]
 
 
+def setup_logging(verbose: bool = False) -> logging.Logger:
+    """
+    Set up logging configuration with configurable verbosity.
+
+    Args:
+        verbose: If True, set log level to DEBUG, otherwise WARNING for clean console output
+
+    Returns:
+        Configured logger instance
+    """
+    global logger
+
+    if logger is not None:
+        return logger
+
+    # Create logger
+    logger = logging.getLogger("family_contact_agent")
+    logger.setLevel(
+        logging.DEBUG if verbose else logging.DEBUG
+    )  # Always capture all levels
+
+    # Clear any existing handlers
+    logger.handlers.clear()
+
+    # Create console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(
+        logging.DEBUG if verbose else logging.WARNING
+    )  # WARNING+ for clean console
+
+    # Create formatter
+    if verbose:
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s"
+        )
+    else:
+        formatter = logging.Formatter("%(levelname)s - %(message)s")
+
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    # Create file handler for all logs
+    file_handler = logging.FileHandler("family_contact_agent.log")
+    file_handler.setLevel(logging.DEBUG)
+    file_formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s"
+    )
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
+
+    return logger
+
+
+def get_logger() -> logging.Logger:
+    """Get the global logger instance."""
+    global logger
+    if logger is None:
+        logger = setup_logging()
+    return logger
+
+
 def get_onnx_session() -> OnnxInferenceSession:
     global OnnxSession
 
@@ -76,16 +142,24 @@ def get_onnx_session() -> OnnxInferenceSession:
 
 
 def download_model_files(repo_id: str, files: List[str], local_path: str) -> None:
+    log = get_logger()
     for file in files:
         if not Path(local_path).joinpath(file).exists():
+            log.debug(f"Downloading {file} from {repo_id}")
             hf_hub_download(
                 repo_id, file, local_dir=local_path, local_dir_use_symlinks=False
             )
+        else:
+            log.debug(f"File {file} already exists, skipping download")
 
 
 def download_models() -> None:
+    log = get_logger()
+    log.debug("Starting model download process")
     for data in MODELS:
+        log.debug(f"Processing model: {data['repo_id']}")
         download_model_files(data["repo_id"], data["files"], data["local_path"])
+    log.debug("Model download process completed")
 
 
 def intersperse(lst: List[Any], item: Any) -> List[Any]:
@@ -200,43 +274,62 @@ def translate_cantonese_to_english(text: str) -> str:
 
 def setup_models() -> None:
     """Initialize and download required models."""
-    print("Current working directory:", os.getcwd())
+    log = get_logger()
+    log.debug(f"Current working directory: {os.getcwd()}")
+
+    # Create directories
+    log.debug("Creating model directories")
     os.makedirs("./canto_nlp/tts/bert/bert-large-cantonese", exist_ok=True)
     os.makedirs("./canto_nlp/tts/bert/deberta-v3-large", exist_ok=True)
     os.makedirs("./canto_nlp/tts/onnx", exist_ok=True)
+
+    # Verify directories exist
     assert os.path.exists("./canto_nlp/tts/bert/bert-large-cantonese")
     assert os.path.exists("./canto_nlp/tts/bert/deberta-v3-large")
     assert os.path.exists("./canto_nlp/tts/onnx")
+    log.debug("All model directories verified")
+
     download_models()
 
 
 def find_contact_by_phone(search_name: str, phone_number: str) -> Optional[Any]:
     """Find a contact by name and filter by phone number."""
+    log = get_logger()
     contacts = search_contacts(search_name)
-    print(f"Contacts found: {contacts}")
+    log.debug(f"Contacts found: {contacts}")
     filtered_contacts = [c for c in contacts if c.phone_number == phone_number]
-    return filtered_contacts[0] if filtered_contacts else None
+    if filtered_contacts:
+        log.debug(f"Found contact: {filtered_contacts[0]}")
+        return filtered_contacts[0]
+    else:
+        log.warning(
+            f"No contact found with name '{search_name}' and phone '{phone_number}'"
+        )
+        return None
 
 
 def process_audio_message(
     audio_message: Any, chat_jid: str, play_audio: bool = True
 ) -> Optional[Dict[str, str]]:
     """Process an audio message: download, convert, play, and transcribe."""
-    print(f"Processing audio message: {audio_message}")
-    print(f"Message ID: {audio_message.id}")
-    print(f"Timestamp: {audio_message.timestamp}")
-    print(f"Content: {audio_message.content}")
+    log = get_logger()
+    log.debug(f"Processing audio message: {audio_message}")
+    log.debug(f"Message ID: {audio_message.id}")
+    log.debug(f"Timestamp: {audio_message.timestamp}")
+    log.debug(f"Content: {audio_message.content}")
 
     # Download the audio file
+    log.debug("Downloading audio file")
     audio_path = download_media(audio_message.id, chat_jid)
-    print(f"Audio path: {audio_path}")
+    log.debug(f"Audio path: {audio_path}")
 
     if not audio_path:
-        print("Failed to download audio file")
+        log.error("Failed to download audio file")
         return None
 
     # Convert Opus OGG to MP3 for better compatibility
     try:
+        log.debug("Converting audio to MP3 format")
         mp3_path = convert_opus_ogg_to_mp3(audio_path)
 
         if play_audio:
@@ -246,48 +339,56 @@ def process_audio_message(
         return transcribe_and_translate(mp3_path)
 
     except Exception as e:
-        print(f"Failed to convert to MP3: {e}")
+        log.error(f"Failed to convert to MP3: {e}")
         return None
 
 
 def play_audio_file(mp3_path: str) -> None:
     """Play an audio file."""
-    print(f"Converted to MP3: {mp3_path}")
-    print(f"You can now play this MP3 file on any device: {mp3_path}")
+    log = get_logger()
+    log.debug(f"Converted to MP3: {mp3_path}")
+    log.debug(f"You can now play this MP3 file on any device: {mp3_path}")
 
     # Read the mp3 file and play it
+    log.debug("Loading audio file for playback")
     audio_data, sample_rate = sf.read(mp3_path)
-    print(f"Audio loaded: {len(audio_data)} samples at {sample_rate} Hz")
+    log.debug(f"Audio loaded: {len(audio_data)} samples at {sample_rate} Hz")
 
     # Play the audio
+    log.debug("Playing audio file")
     sd.play(audio_data, sample_rate)
     sd.wait()
+    log.debug("Audio playback completed")
 
 
 def transcribe_and_translate(mp3_path: str) -> Optional[Dict[str, str]]:
     """Transcribe audio and translate the result."""
+    log = get_logger()
     try:
-        print("Transcribing audio...")
+        log.debug("Transcribing audio...")
         transcribed_text = transcribe_audio(mp3_path)
 
         if transcribed_text:
-            print(f"Transcribed text: {transcribed_text}")
+            log.info(f"Transcribed text: {transcribed_text}")
             # Translate text back to English
+            log.debug("Translating transcribed text to English")
             translated_text = translate_cantonese_to_english(transcribed_text)
-            print(f"Translated text: {translated_text}")
+            log.info(f"Translated text: {translated_text}")
             return {"transcribed": transcribed_text, "translated": translated_text}
         else:
-            print("No text was transcribed (audio might be silent or unclear)")
+            log.warning("No text was transcribed (audio might be silent or unclear)")
             return None
 
     except Exception as e:
-        print(f"Failed to transcribe audio: {e}")
+        log.error(f"Failed to transcribe audio: {e}")
         return None
 
 
 def create_audio_file(text: str, output_path: Union[str, Path]) -> bool:
     """Create an audio file from text and optionally play it."""
+    log = get_logger()
     # Translate English to Cantonese
+    log.debug("Translating text from English to Cantonese")
     translation = Translation(
         source_text=text,
         source_lang="English",
@@ -295,63 +396,70 @@ def create_audio_file(text: str, output_path: Union[str, Path]) -> bool:
         country="Hong Kong",
     )
     translated_text = translation.translate()
-    print(f"Translated text: {translated_text}")
+    log.info(f"Translated text: {translated_text}")
 
     # Generate audio
+    log.debug("Generating audio from translated text")
     audio = text_to_speech(translated_text, sid=0, language="YUE")
 
     if audio is not None:
         # Save audio file
+        log.debug(f"Saving audio to {output_path}")
         sf.write(output_path, audio, 44100)
-        print(f"Audio saved as {output_path}")
+        log.debug(f"Audio saved as {output_path}")
 
         # Always play the audio for preview before asking for confirmation
-        print("Playing audio preview...")
+        log.debug("Playing audio preview...")
         sd.play(audio, samplerate=44100)
         sd.wait()
+        log.debug("Audio preview completed")
 
         return True
     else:
-        print("No audio to play or save.")
+        log.error("No audio to play or save.")
         return False
 
 
 def send_text_as_audio(text: str, contact_phone: str, contact_name: str) -> bool:
     """Send text as audio message to a contact."""
+    log = get_logger()
     # Find contact
     contact = find_contact_by_phone(contact_name, contact_phone)
     if not contact:
-        print(f"Contact {contact_name} with phone {contact_phone} not found.")
+        log.error(f"Contact {contact_name} with phone {contact_phone} not found.")
         return False
 
-    print(f"Contact JID: {contact.jid}")
+    log.debug(f"Contact JID: {contact.jid}")
 
     # Create output directory
+    log.debug("Creating output directory")
     output_dir = Path("outputs") / contact.jid
     output_dir.mkdir(exist_ok=True, parents=True)
 
     # Generate unique filename
     unique_id = uuid.uuid4()
     output_path = output_dir / f"{unique_id}.wav"
+    log.debug(f"Generated output path: {output_path}")
 
     # Create audio file
     if create_audio_file(text, output_path):
         # Ask for confirmation before sending
-        print(f"\nReady to send audio message to {contact_name} ({contact_phone})")
-        print(f"Text: {text}")
+        log.info(f"Ready to send audio message to {contact_name} ({contact_phone})")
+        log.debug(f"Text: {text}")
         confirmation = input("Send message? (Y/N): ").strip().upper()
 
         if confirmation == "Y":
             # Send the audio file
+            log.debug("Sending audio message")
             success, status_message = send_audio_message(contact.jid, str(output_path))
             if success:
-                print(f"Audio message sent successfully: {status_message}")
+                log.info(f"Audio message sent successfully: {status_message}")
                 return True
             else:
-                print(f"Failed to send audio message: {status_message}")
+                log.error(f"Failed to send audio message: {status_message}")
                 return False
         else:
-            print("Message sending cancelled.")
+            log.debug("Message sending cancelled by user.")
             return False
     else:
         return False
@@ -359,21 +467,28 @@ def send_text_as_audio(text: str, contact_phone: str, contact_name: str) -> bool
 
 def receive_mode(contact_phone: str = "") -> bool:
     """Receive and process audio messages from a contact."""
+    log = get_logger()
     # Get chat and messages
+    log.debug(f"Getting chat for contact phone: {contact_phone}")
     chat = get_direct_chat_by_contact(contact_phone)
-    print(f"Chat: {chat}")
+    log.debug(f"Chat: {chat}")
     messages = list_messages_raw(chat_jid=chat.jid)
-    print(f"Messages: {messages}")
+    log.debug(f"Messages: {messages}")
 
     # Find and process the last audio message from contact
+    log.debug("Searching for last audio message from contact")
     last_audio_message = find_last_audio_message_from_other(messages)
     if last_audio_message:
+        log.debug("Found audio message, processing...")
         result = process_audio_message(last_audio_message, chat.jid)
         if result:
-            print("Audio processing completed successfully")
+            log.info("Audio processing completed successfully")
             return True
+        else:
+            log.error("Audio processing failed")
+            return False
     else:
-        print("No audio messages found from contact")
+        log.warning("No audio messages found from contact")
         return False
 
 
@@ -393,72 +508,90 @@ def main() -> None:
     parser.add_argument(
         "--name", type=str, default="", help="Contact name to search for"
     )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose logging (DEBUG level)",
+    )
 
     args = parser.parse_args()
 
+    # Setup logging first
+    setup_logging(verbose=args.verbose)
+    log = get_logger()
+
+    log.info("Starting Family Contact Agent")
+    if args.verbose:
+        log.debug("Verbose mode enabled")
+
     # Setup models (required for both modes)
-    print("Setting up models...")
+    log.debug("Setting up models...")
     setup_models()
 
     if args.mode == "send":
         if not args.text:
-            print("Error: --text is required for send mode")
+            log.error("Error: --text is required for send mode")
             return
 
         if not args.phone:
-            print("Error: --phone is required for send mode")
+            log.error("Error: --phone is required for send mode")
             return
 
         if not args.name:
-            print("Error: --name is required for send mode")
+            log.error("Error: --name is required for send mode")
             return
 
-        print(f"Sending message: {args.text}")
+        log.debug(f"Sending message: {args.text}")
         success = send_text_as_audio(args.text, args.phone, args.name)
         if success:
-            print("Send operation completed successfully")
+            log.info("Send operation completed successfully")
         else:
-            print("Send operation failed")
+            log.error("Send operation failed")
 
     elif args.mode == "receive":
         if not args.phone:
-            print("Error: --phone is required for receive mode")
+            log.error("Error: --phone is required for receive mode")
             return
 
-        print("Receiving and processing audio messages...")
+        log.debug("Receiving and processing audio messages...")
         success = receive_mode(args.phone)
         if success:
-            print("Receive operation completed successfully")
+            log.info("Receive operation completed successfully")
         else:
-            print("Receive operation failed")
+            log.error("Receive operation failed")
 
     elif args.mode == "interactive":
-        print("Interactive mode - choose an operation:")
+        log.debug("Interactive mode - choose an operation:")
         print("1. Send text as audio")
         print("2. Receive and process audio")
 
         choice = input("Enter your choice (1 or 2): ").strip()
+        log.debug(f"User selected choice: {choice}")
 
         if choice == "1":
+            log.debug("User selected send mode")
             text = input("Enter text to send: ").strip()
+            log.debug(f"User entered text: {text}")
             if text:
                 success = send_text_as_audio(text, args.phone, args.name)
                 if success:
-                    print("Send operation completed successfully")
+                    log.info("Send operation completed successfully")
                 else:
-                    print("Send operation failed")
+                    log.error("Send operation failed")
             else:
-                print("No text provided")
+                log.warning("No text provided")
 
         elif choice == "2":
+            log.debug("User selected receive mode")
             success = receive_mode(args.phone)
             if success:
-                print("Receive operation completed successfully")
+                log.info("Receive operation completed successfully")
             else:
-                print("Receive operation failed")
+                log.error("Receive operation failed")
 
         else:
-            print("Invalid choice")
+            log.error(f"Invalid choice: {choice}")
 
 
 if __name__ == "__main__":
