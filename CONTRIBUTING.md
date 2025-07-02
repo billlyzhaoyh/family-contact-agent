@@ -46,15 +46,20 @@ This project is committed to providing a welcoming and inclusive environment for
 
 2. **Set up Python environment:**
    ```bash
-   # Using uv (recommended)
-   uv venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   uv pip install -e ".[dev]"
+   # Using uv (recommended) - One command setup
+   make setup
 
-   # Or using pip
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   pip install -e ".[dev]"
+   # Or manually:
+   # Create virtual environment and sync dependencies
+   uv sync
+   # Install package in editable mode with dev dependencies
+   uv pip install -e ".[dev]"
+   # Install pre-commit hooks
+   pre-commit install
+
+   # Activate the virtual environment
+   source .venv/bin/activate  # On Unix/macOS
+   # .venv\Scripts\activate   # On Windows
    ```
 
 3. **Install pre-commit hooks:**
@@ -67,6 +72,43 @@ This project is committed to providing a welcoming and inclusive environment for
    cp .env.example .env
    # Edit .env with your API keys and configuration
    ```
+
+### Dependency Management
+
+This project uses `uv` for dependency management. Here are the key commands for development:
+
+**Initial Setup:**
+```bash
+# Complete setup (recommended)
+make setup
+
+# Or step by step:
+uv sync                    # Sync dependencies from lock file
+uv pip install -e ".[dev]" # Install package in editable mode
+```
+
+**Adding/Removing Dependencies:**
+```bash
+# Add a new dependency
+uv add package-name
+
+# Add a development dependency
+uv add --dev package-name
+
+# Remove a dependency
+uv remove package-name
+
+# Update all dependencies
+uv sync
+```
+
+**Common Development Commands:**
+```bash
+make sync           # Sync dependencies from lock file
+make install-dev    # Install dev dependencies in editable mode
+make test           # Run tests
+make format         # Format code
+```
 
 ## Making Changes
 

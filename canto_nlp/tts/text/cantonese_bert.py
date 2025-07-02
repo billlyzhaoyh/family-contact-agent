@@ -5,10 +5,6 @@ from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 LOCAL_PATH = "./canto_nlp/tts/bert/bert-large-cantonese"
 
-tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
-
-models = dict()
-
 
 def get_bert_feature(
     text,
@@ -17,6 +13,10 @@ def get_bert_feature(
     style_text=None,
     style_weight=0.7,
 ):
+    models = dict()
+    # check if text is empty
+    if not text:
+        raise ValueError("Text cannot be empty")
     if (
         sys.platform == "darwin"
         and torch.backends.mps.is_available()
@@ -27,6 +27,7 @@ def get_bert_feature(
         device = "cuda"
     if device not in models.keys():
         models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH).to(device)
+    tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:

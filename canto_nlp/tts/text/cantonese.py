@@ -5,6 +5,7 @@ import cn2an
 import pycantonese
 
 from canto_nlp.tts.text.symbols import punctuation
+from canto_nlp.tts.text.cantonese_bert import get_bert_feature
 
 # Global variable to track if jieba has been initialized
 _jieba_initialized = False
@@ -300,12 +301,6 @@ def get_jyutping(text):
     return jyutping_array
 
 
-def get_bert_feature(text, word2ph):
-    from text import cantonese_bert
-
-    return cantonese_bert.get_bert_feature(text, word2ph)
-
-
 def parse_jyutping(jyutping):
     orig_jyutping = jyutping
 
@@ -358,8 +353,6 @@ def g2p(text):
 
 
 if __name__ == "__main__":
-    from text.cantonese_bert import get_bert_feature
-
     # text = "Apple BB 你點解會咁柒㗇？我真係唔該晒你呀！123"
     text = "佢邊係想辭工吖，跳下草裙舞想加人工之嘛。"
     # text = "我個 app 嘅介紹文想由你寫，因為我唔知從一般用家角度要細緻到乜程度"
@@ -367,6 +360,9 @@ if __name__ == "__main__":
     text = text_normalize(text)
     # print("normalized text", text)
     phones, tones, word2ph = g2p(text)
+    print(f"word2ph: {word2ph}")
+    print(f"word2ph type: {type(word2ph)}")
+
     # print(phones, tones, word2ph)
     bert = get_bert_feature(text, word2ph)
     # print(bert.shape)

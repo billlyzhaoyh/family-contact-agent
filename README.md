@@ -137,12 +137,24 @@ python main.py --mode send --text "Hello" --phone "+1234567890" --name "John" --
 # Install uv if you don't have it
 pip install uv
 
-# Create a virtual environment (optional but recommended)
-uv venv .venv
-source .venv/bin/activate
+# Create a virtual environment and install dependencies
+uv sync  # This creates .venv and installs all dependencies from uv.lock
 
-# Install dependencies
-uv pip install -e ".[dev]"  # Install with dev dependencies
+# Activate the virtual environment
+source .venv/bin/activate  # On Unix/macOS
+# .venv\Scripts\activate   # On Windows
+
+# Install the package in editable mode with dev dependencies
+uv pip install -e ".[dev]"
+```
+
+**Alternative: Use the Makefile for setup**
+```sh
+# This will check dependencies and set up the environment
+make setup
+
+# Then install in editable mode
+make install-dev
 ```
 
 ### 2. Configure LLM Provider (OpenAI - Default)
@@ -229,6 +241,49 @@ python main.py --mode interactive --phone "+1234567890" --name "John Doe"
 For more details on all available options, see the [Usage](#usage) section above.
 
 ## Development
+
+### Dependency Management
+This project uses `uv` for dependency management. Here are the key commands:
+
+**Initial Setup:**
+```sh
+# Install all dependencies from lock file
+uv sync
+
+# Install package in editable mode with dev dependencies
+uv pip install -e ".[dev]"
+```
+
+**Adding/Removing Dependencies:**
+```sh
+# Add a new dependency
+uv add package-name
+
+# Add a development dependency
+uv add --dev package-name
+
+# Remove a dependency
+uv remove package-name
+
+# Update dependencies
+uv sync
+```
+
+**Running Scripts:**
+```sh
+# Run a script with proper dependencies
+uv run script.py
+```
+
+**Quick Reference:**
+```sh
+make setup        # Complete development setup
+make sync         # Sync dependencies from lock file
+make install-dev  # Install dev dependencies in editable mode
+make test         # Run tests
+make format       # Format code
+make clean        # Clean up generated files
+```
 
 ### Pre-commit Hooks
 This project uses pre-commit hooks to ensure code quality. After installing dev dependencies, set up pre-commit:

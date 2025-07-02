@@ -1,7 +1,7 @@
 # Makefile for Family Contact Agent
 # A passion project to foster love and communication within families
 
-.PHONY: help install install-dev test test-verbose test-coverage lint format clean setup whatsapp-bridge download-models run check-deps
+.PHONY: help install install-dev test test-verbose test-coverage lint format clean setup whatsapp-bridge download-models run check-deps sync
 
 # Default target
 help:
@@ -11,6 +11,7 @@ help:
 	@echo "  setup          - Set up the development environment"
 	@echo "  install        - Install production dependencies"
 	@echo "  install-dev    - Install development dependencies"
+	@echo "  sync           - Sync dependencies from lock file"
 	@echo "  check-deps     - Check if required system dependencies are installed"
 	@echo ""
 	@echo "Testing:"
@@ -34,6 +35,10 @@ help:
 setup: check-deps
 	@echo "Setting up development environment using uv..."
 	uv sync
+	@echo "Installing package in editable mode with dev dependencies..."
+	uv pip install -e ".[dev]"
+	@echo "Installing pre-commit hooks..."
+	pre-commit install
 	@echo "Virtual environment created and dependencies installed. Activate it with:"
 	@echo "  source .venv/bin/activate  # On Unix/macOS"
 	@echo "  .venv\\Scripts\\activate     # On Windows"
@@ -69,14 +74,22 @@ check-deps:
 	fi
 	@echo "All system dependencies are installed! ✓"
 
+# Sync dependencies from lock file
+sync:
+	@echo "Syncing dependencies from lock file..."
+	uv sync
+	@echo "Dependencies synced successfully!"
+
 # Install production dependencies
 install:
 	@echo "Installing production dependencies..."
+	uv sync
 	uv pip install -e .
 
 # Install development dependencies
 install-dev:
 	@echo "Installing development dependencies..."
+	uv sync
 	uv pip install -e ".[dev]"
 	@echo "Installing pre-commit hooks..."
 	pre-commit install
