@@ -17,6 +17,9 @@ def get_bert_feature(
     style_text=None,
     style_weight=0.7,
 ):
+    # check if text is empty
+    if not text:
+        raise ValueError("Text cannot be empty")
     if (
         sys.platform == "darwin"
         and torch.backends.mps.is_available()

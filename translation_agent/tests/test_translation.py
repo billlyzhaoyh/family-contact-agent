@@ -247,7 +247,7 @@ class TestTranslation:
     ):
         """Test translation with custom max_tokens affecting chunking decision."""
         # Mock token count to be between default and custom max_tokens
-        mock_num_tokens.return_value = 300
+        mock_num_tokens.return_value = 100
 
         mock_one_chunk = Mock()
         mock_one_chunk.do.return_value = "Translated text"

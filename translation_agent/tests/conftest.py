@@ -8,6 +8,35 @@ from unittest.mock import Mock, patch
 from typing import Dict, Any
 
 
+@pytest.fixture(autouse=True)
+def prevent_real_api_calls():
+    """
+    Automatically applied to all tests to prevent real API calls.
+    This fixture ensures that no actual API requests are made during testing.
+    """
+    # Clear any real API keys from environment
+    with patch.dict(
+        os.environ,
+        {
+            # Clear real API keys
+            "OPENAI_API_KEY": "test_key_do_not_use",
+            "ANTHROPIC_API_KEY": "test_key_do_not_use",
+            "COHERE_API_KEY": "test_key_do_not_use",
+            "GOOGLE_API_KEY": "test_key_do_not_use",
+            "MISTRAL_API_KEY": "test_key_do_not_use",
+            "AZURE_API_KEY": "test_key_do_not_use",
+            "AWS_ACCESS_KEY_ID": "test_key_do_not_use",
+            "AWS_SECRET_ACCESS_KEY": "test_key_do_not_use",
+            # Set test base URLs
+            "OPENAI_API_BASE": "https://test.openai.com",
+            "ANTHROPIC_API_BASE": "https://test.anthropic.com",
+            "AZURE_API_BASE": "https://test.azure.com",
+        },
+        clear=True,
+    ):
+        yield
+
+
 @pytest.fixture
 def sample_config() -> Dict[str, Any]:
     """Sample configuration for testing."""
@@ -79,3 +108,27 @@ def mock_environment():
         },
     ):
         yield
+
+
+@pytest.fixture
+def mock_httpx_client():
+    """
+    Mock httpx client to prevent any real HTTP requests during testing.
+    This is a safety net in case any code tries to make direct HTTP calls.
+    """
+    with patch("httpx.Client") as mock_client:
+        mock_instance = Mock()
+        mock_client.return_value = mock_instance
+        yield mock_instance
+
+
+@pytest.fixture
+def mock_requests_session():
+    """
+    Mock requests session to prevent any real HTTP requests during testing.
+    This is a safety net in case any code tries to make direct HTTP calls.
+    """
+    with patch("requests.Session") as mock_session:
+        mock_instance = Mock()
+        mock_session.return_value = mock_instance
+        yield mock_instance
